@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import axios from "axios";
 
 export default function Home() {
   const [email, setEmail] = useState("")
@@ -22,8 +23,17 @@ export default function Home() {
       return
     }
 
+    axios.get("http://localhost:3000/api/user?email=" +email)
+      .then((response) => {
+        console.log("User fetched successfully:", response.data);
+        router.push(`/content?email=${encodeURIComponent(email)}`)
+      })
+      .catch((err) => {
+      console.error(err);
+        setError("An error occurred while fetching user data");
+      });
+
     // Redirect to content page with email as query parameter
-    router.push(`/content?email=${encodeURIComponent(email)}`)
   }
 
   return (

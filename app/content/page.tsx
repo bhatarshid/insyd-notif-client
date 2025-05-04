@@ -1,186 +1,143 @@
-"use client"
+'use client';
 
-import type React from "react"
-
-import { useState, useEffect } from "react"
+import { useEffect, useState } from 'react';
 import { useSearchParams } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { Textarea } from "@/components/ui/textarea"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { ThumbsUp } from "lucide-react"
-
-interface ContentItem {
-  id: number
-  title: string
-  body: string
-  author: string
-  date: string
-}
-
-const contentArray: ContentItem[] = [
-  {
-    id: 1,
-    title: "Understanding React Hooks",
-    body: "React Hooks are functions that let you use state and other React features without writing a class. They were introduced in React 16.8 and have changed how we write React components.\n\nHooks like useState, useEffect, and useContext allow you to reuse stateful logic between components without changing your component hierarchy. This makes your code more readable and easier to maintain.",
-    author: "React Team",
-    date: "May 2, 2023",
-  },
-  {
-    id: 2,
-    title: "Getting Started with Next.js",
-    body: "Next.js is a React framework that enables server-side rendering, static site generation, and more. It's designed to make building React applications easier and more productive.\n\nWith features like file-based routing, API routes, and built-in CSS support, Next.js provides a complete solution for building modern web applications. It's also highly extensible, allowing you to customize it to your needs.",
-    author: "Vercel",
-    date: "June 15, 2023",
-  },
-  {
-    id: 3,
-    title: "The Power of Tailwind CSS",
-    body: "Tailwind CSS is a utility-first CSS framework that allows you to build custom designs without ever leaving your HTML. Instead of pre-designed components, Tailwind provides low-level utility classes that let you build completely custom designs.\n\nThis approach gives you the flexibility to create unique designs while still benefiting from the consistency and maintainability of a framework. It's also highly customizable, allowing you to adapt it to your brand.",
-    author: "Tailwind Labs",
-    date: "April 10, 2023",
-  },
-]
+import { decode } from 'punycode';
 
 interface Comment {
-  id: number
-  text: string
-  author: string
-  date: string
+  comment: string;
+  user_id: number;
+  commenter_name: string;
 }
 
-export default function ContentPage() {
+interface Like {
+  user_id: number;
+  liker_name: string;
+  liker_email: string;
+}
+
+interface Content {
+  id: number;
+  userId: number;
+  content: string;
+  created_at: string;
+  user_name: string;
+  user_email: string;
+  comments: Comment[];
+  likes: Like[];
+  like_count: number;
+}
+
+export default function Page() {
+  const [contentArray, setContentArray] = useState<Content[]>([]);
+  const [commentInput, setCommentInput] = useState<Record<number, string>>({});
+  const [user, setUser] = useState<{ id: number; name: string; email: string } | null>(null);
   const searchParams = useSearchParams()
   const email = searchParams.get("email") || "Guest"
 
-  const [selectedContentId, setSelectedContentId] = useState(1)
-  const selectedContent = contentArray.find((item) => item.id === selectedContentId) || contentArray[0]
-
-  const [liked, setLiked] = useState(false)
-  const [likeCount, setLikeCount] = useState(42)
-  const [comment, setComment] = useState("")
-  const [comments, setComments] = useState<Comment[]>([
-    {
-      id: 1,
-      text: "This is really interesting content!",
-      author: "user@example.com",
-      date: "2 hours ago",
-    },
-    {
-      id: 2,
-      text: "I learned a lot from this, thanks for sharing.",
-      author: "another@example.com",
-      date: "5 hours ago",
-    },
-  ])
-
-  const handleLike = () => {
-    if (liked) {
-      setLikeCount(likeCount - 1)
-    } else {
-      setLikeCount(likeCount + 1)
-    }
-    setLiked(!liked)
-  }
-
-  const handleAddComment = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!comment.trim()) return
-
-    const newComment: Comment = {
-      id: Date.now(),
-      text: comment,
-      author: email,
-      date: "Just now",
-    }
-
-    setComments([newComment, ...comments])
-    setComment("")
-  }
-
-  // Redirect if no email is provided
   useEffect(() => {
-    if (!searchParams.get("email")) {
-      window.location.href = "/"
-    }
-  }, [searchParams])
+    fetchData();
+    fetch('http://localhost:3000/api/user?email='+decodeURI(email))
+      .then(async (response) => {
+        const data = await response.json();
+        console.log(data)
+        setUser(data.user);
+      });
+  }, []);
+
+  const fetchData = async () => {
+    const res = await fetch('http://localhost:3000/api/posts');
+    const data = await res.json();
+    setContentArray(data.posts);
+  };
+
+  const handleCommentChange = (postId: number, text: string) => {
+    setCommentInput((prev) => ({
+      ...prev,
+      [postId]: text,
+    }));
+  };
+
+  const handleAddComment = async (postId: number) => {
+    const text = commentInput[postId]?.trim();
+    if (!text) return;
+    await fetch(`http://localhost:3000/api/posts/comment`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ comment: text,  postId, userId: user?.id }),
+    });
+
+    setCommentInput((prev) => ({ ...prev, [postId]: '' }));
+    fetchData();
+  };
+
+  const handleLike = async (postId: number) => {
+    await fetch(`http://localhost:3000/api/posts/like`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ postId, userId: user?.id }),
+    });
+    fetchData();
+  };
 
   return (
-    <main className="flex min-h-screen flex-col items-center p-4 bg-gray-50">
-      <div className="w-full max-w-3xl space-y-6">
-        <Card>
-          <CardHeader>
-            <div className="flex justify-between items-center mb-2">
-              <div>
-                <CardTitle>{selectedContent.title}</CardTitle>
-                <CardDescription>Viewing as: {email}</CardDescription>
-              </div>
-              <div className="flex gap-2">
-                {contentArray.map((item) => (
-                  <Button
-                    key={item.id}
-                    variant={item.id === selectedContentId ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setSelectedContentId(item.id)}
-                  >
-                    Article {item.id}
-                  </Button>
-                ))}
-              </div>
+    <div className='flex flex-col items-center justify-center min-h-screen py-8 px-4'>
+      {contentArray.length === 0 ? (
+        <div>No content available</div>
+      ) : (
+        contentArray.map((item) => (
+          <div
+            key={item.id}
+            className='w-full max-w-xl mb-6 p-4 border rounded-xl shadow-md bg-white'
+          >
+            <div className='text-lg font-semibold mb-2'>{item.user_name}</div>
+            <div className='text-gray-800 mb-2'>{item.content}</div>
+            <div className='text-sm text-gray-500 mb-2'>
+              Posted on: {item.created_at}
             </div>
-            <div className="text-sm text-gray-500">
-              By {selectedContent.author} • {selectedContent.date}
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="prose max-w-none">
-              {selectedContent.body.split("\n\n").map((paragraph, index) => (
-                <p key={index}>{paragraph}</p>
-              ))}
-            </div>
-          </CardContent>
-          <CardFooter className="flex justify-between">
-            <Button variant={liked ? "default" : "outline"} onClick={handleLike} className="flex items-center gap-2">
-              <ThumbsUp size={16} />
-              <span>{likeCount}</span>
-            </Button>
-          </CardFooter>
-        </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-xl">Comments</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleAddComment} className="space-y-4 mb-6">
-              <Textarea
-                placeholder="Add a comment..."
-                value={comment}
-                onChange={(e) => setComment(e.target.value)}
-                className="w-full"
+            <button
+              onClick={() => handleLike(item.id)}
+              className='bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 mb-2'
+            >
+              Like ({item.like_count})
+            </button>
+
+            <div className='mb-4'>
+              <input
+                type='text'
+                placeholder='Add a comment...'
+                value={commentInput[item.id] || ''}
+                onChange={(e) => handleCommentChange(item.id, e.target.value)}
+                className='border px-2 py-1 rounded w-full mb-2'
               />
-              <Button type="submit">Post Comment</Button>
-            </form>
+              <button
+                onClick={() => handleAddComment(item.id)}
+                className='bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600'
+              >
+                Post Comment
+              </button>
+            </div>
 
-            <div className="space-y-4">
-              {comments.map((comment) => (
-                <div key={comment.id} className="border-b pb-4 last:border-0">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Avatar>
-                      <AvatarFallback>{comment.author[0].toUpperCase()}</AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <p className="font-medium">{comment.author}</p>
-                      <p className="text-xs text-gray-500">{comment.date}</p>
-                    </div>
+            <div className='mt-2 space-y-3'>
+              {item.comments.map((comment, idx) => (
+                <div key={idx} className='ml-2 border-l pl-3'>
+                  <div className='text-sm font-medium'>
+                    {comment.commenter_name}
                   </div>
-                  <p>{comment.text}</p>
+                  <div className='text-sm text-gray-700'>
+                    {comment.comment}
+                  </div>
                 </div>
               ))}
             </div>
-          </CardContent>
-        </Card>
-      </div>
-    </main>
-  )
+          </div>
+        ))
+      )}
+    </div>
+  );
 }
