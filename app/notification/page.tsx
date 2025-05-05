@@ -2,6 +2,8 @@
 import { useEffect, useState } from 'react';
 import useWebSocket from '@/components/hooks/webSocket';
 import { useRouter } from 'next/navigation';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 export default function Page() {
   const { messages, isConnected, auth } = useWebSocket('ws://localhost:3000');
@@ -11,20 +13,38 @@ export default function Page() {
   useEffect(() => {
     const userData = localStorage.getItem('user');
     if (userData) {
-      console.log(userData)
       const parsedUser = JSON.parse(userData);
       setUser(parsedUser);
       if (isConnected) {
         auth(parsedUser.id);
       }
-    }
-    else {
-      router.push(`/`)
+    } else {
+      router.push(`/`);
     }
   }, [isConnected]);
 
+  useEffect(() => {
+    if (messages.length > 0) {
+      const latestMessage = messages[messages.length - 1];
+      const parsedMessage = JSON.parse(latestMessage);
+      if (parsedMessage.type == 'like' || parsedMessage.type == 'comment') {
+        toast(parsedMessage.message, {
+          type: 'info',
+          position: 'top-right',
+          autoClose: 5000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+          progress: undefined,
+        });
+      } 
+    }
+  }, [messages]);
+
   return (
     <div className='flex flex-col items-center justify-start min-h-screen p-6 bg-gray-50'>
+      <ToastContainer />
       <h2 className='text-2xl font-semibold mb-4'>Notifications</h2>
 
       {messages.length === 0 ? (

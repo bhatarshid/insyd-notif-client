@@ -13,28 +13,22 @@ export default function Home() {
   const [email, setEmail] = useState("")
   const [error, setError] = useState("")
   const router = useRouter()
-
-  const handleSubmit = (e: React.FormEvent) => {
+  
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    // Simple email validation
     if (!email || !email.includes("@")) {
       setError("Please enter a valid email address")
       return
     }
 
-    axios.get("http://localhost:3000/api/user?email=" +email)
-      .then((response) => {
-        console.log("User fetched successfully:", response.data);
-        localStorage.setItem("user", JSON.stringify(response.data.user));
-        router.push(`/content?email=${encodeURIComponent(email)}`)
-      })
-      .catch((err) => {
-      console.error(err);
-        setError("An error occurred while fetching user data");
-      });
+    const response = await axios.get("http://localhost:3000/api/user?email=" + email);
+    console.log("User fetched successfully:", response.data);
 
-    // Redirect to content page with email as query parameter
+    const user = response.data.user;
+    localStorage.setItem("user", JSON.stringify(user));
+
+    router.push(`/content?email=${encodeURIComponent(email)}`);
   }
 
   return (
