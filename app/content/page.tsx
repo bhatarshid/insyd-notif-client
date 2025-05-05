@@ -33,7 +33,7 @@ export default function Page() {
   const [contentArray, setContentArray] = useState<Content[]>([]);
   const [commentInput, setCommentInput] = useState<Record<number, string>>({});
   const [user, setUser] = useState<{ id: number; name: string; email: string } | null>(null);
-  const { messages, isConnected, auth } = useWebSocket(`wss://${process.env.NEXT_PUBLIC_API_BASE_URL}`);
+  const { messages, isConnected, auth } = useWebSocket(`ws://${process.env.NEXT_PUBLIC_API_BASE_URL}`);
 
   useEffect(() => {
     fetchData();
@@ -70,7 +70,7 @@ export default function Page() {
   }, [messages]);
 
   const fetchData = async () => {
-    const res = await fetch(`https://insyd-notification-system.onrender.com/api/posts`);
+    const res = await fetch(`https://${process.env.NEXT_PUBLIC_API_BASE_URL}/api/posts`);
     const data = await res.json();
     setContentArray(data.posts);
   };
@@ -85,7 +85,7 @@ export default function Page() {
   const handleAddComment = async (postId: number) => {
     const text = commentInput[postId]?.trim();
     if (!text) return;
-    await fetch(`https://insyd-notification-system.onrender.com/api/posts/comment`, {
+    await fetch(`https://${process.env.NEXT_PUBLIC_API_BASE_URL}/api/posts/comment`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -98,7 +98,7 @@ export default function Page() {
   };
 
   const handleLike = async (postId: number) => {
-    await fetch(`https://insyd-notification-system.onrender.com/api/posts/like`, {
+    await fetch(`https://${process.env.NEXT_PUBLIC_API_BASE_URL}/api/posts/like`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
