@@ -26,6 +26,7 @@ export default function Home() {
     axios.get("http://localhost:3000/api/user?email=" +email)
       .then((response) => {
         console.log("User fetched successfully:", response.data);
+        localStorage.setItem("user", JSON.stringify(response.data.user));
         router.push(`/content?email=${encodeURIComponent(email)}`)
       })
       .catch((err) => {

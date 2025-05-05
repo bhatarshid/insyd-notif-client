@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { useSearchParams } from "next/navigation"
-import { decode } from 'punycode';
 
 interface Comment {
   comment: string;
@@ -37,12 +36,18 @@ export default function Page() {
 
   useEffect(() => {
     fetchData();
-    fetch('http://localhost:3000/api/user?email='+decodeURI(email))
-      .then(async (response) => {
-        const data = await response.json();
-        console.log(data)
-        setUser(data.user);
-      });
+    const userData = localStorage.getItem('user');
+    if (userData) {
+      const parsedUser = JSON.parse(userData);
+      setUser(parsedUser);
+    } else {
+      fetch(`http://localhost:3000/api/user?email=${email}`)
+        .then(async (response) => {
+          const data = await response.json();
+          setUser(data.user);
+          localStorage.setItem('user', JSON.stringify(data.user));
+        });
+    }
   }, []);
 
   const fetchData = async () => {
