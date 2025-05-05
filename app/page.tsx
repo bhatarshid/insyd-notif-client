@@ -22,7 +22,7 @@ export default function Home() {
       return
     }
 
-    const response = await axios.get("http://localhost:3000/api/user?email=" + email);
+    const response = await axios.get(`https://${process.env.NEXT_PUBLIC_API_BASE_URL}/api/user?email=${email}`);
     console.log("User fetched successfully:", response.data);
 
     const user = response.data.user;

@@ -36,7 +36,7 @@ export default function Page() {
   const [user, setUser] = useState<{ id: number; name: string; email: string } | null>(null);
   const searchParams = useSearchParams()
   const email = searchParams.get("email") || "Guest"
-  const { messages, isConnected, auth } = useWebSocket('ws://localhost:3000');
+  const { messages, isConnected, auth } = useWebSocket(`wss://${process.env.NEXT_PUBLIC_API_BASE_URL}`);
 
   useEffect(() => {
     fetchData();
@@ -49,7 +49,7 @@ export default function Page() {
         auth(parsedUser.id);
       }
     } else {
-      fetch(`http://localhost:3000/api/user?email=${email}`)
+      fetch(`https://insyd-notification-system.onrender.com/api/user?email=${email}`)
         .then(async (response) => {
           const data = await response.json();
           setUser(data.user);
@@ -81,7 +81,7 @@ export default function Page() {
   }, [messages]);
 
   const fetchData = async () => {
-    const res = await fetch('http://localhost:3000/api/posts');
+    const res = await fetch(`https://insyd-notification-system.onrender.com/api/posts`);
     const data = await res.json();
     setContentArray(data.posts);
   };
@@ -96,7 +96,7 @@ export default function Page() {
   const handleAddComment = async (postId: number) => {
     const text = commentInput[postId]?.trim();
     if (!text) return;
-    await fetch(`http://localhost:3000/api/posts/comment`, {
+    await fetch(`https://insyd-notification-system.onrender.com/api/posts/comment`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -109,7 +109,7 @@ export default function Page() {
   };
 
   const handleLike = async (postId: number) => {
-    await fetch(`http://localhost:3000/api/posts/like`, {
+    await fetch(`https://insyd-notification-system.onrender.com/api/posts/like`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
