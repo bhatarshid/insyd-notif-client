@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useSearchParams } from "next/navigation"
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import useWebSocket from '@/components/hooks/webSocket';
@@ -34,8 +33,6 @@ export default function Page() {
   const [contentArray, setContentArray] = useState<Content[]>([]);
   const [commentInput, setCommentInput] = useState<Record<number, string>>({});
   const [user, setUser] = useState<{ id: number; name: string; email: string } | null>(null);
-  const searchParams = useSearchParams()
-  const email = searchParams.get("email") || "Guest"
   const { messages, isConnected, auth } = useWebSocket(`wss://${process.env.NEXT_PUBLIC_API_BASE_URL}`);
 
   useEffect(() => {
@@ -49,15 +46,7 @@ export default function Page() {
         auth(parsedUser.id);
       }
     } else {
-      fetch(`https://insyd-notification-system.onrender.com/api/user?email=${email}`)
-        .then(async (response) => {
-          const data = await response.json();
-          setUser(data.user);
-          localStorage.setItem('user', JSON.stringify(data.user));
-          if (isConnected) {
-            auth(data.user.id);
-          }
-        });
+      console.log("something went wrong")
     }
   }, [isConnected]);
 
