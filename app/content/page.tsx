@@ -33,7 +33,7 @@ export default function Page() {
   const [contentArray, setContentArray] = useState<Content[]>([]);
   const [commentInput, setCommentInput] = useState<Record<number, string>>({});
   const [user, setUser] = useState<{ id: number; name: string; email: string } | null>(null);
-  const { messages, isConnected, auth } = useWebSocket(`ws://${process.env.NEXT_PUBLIC_API_BASE_URL}`);
+  const { messages, isConnected, auth } = useWebSocket(`wss://${process.env.NEXT_PUBLIC_API_BASE_URL}`);
 
   useEffect(() => {
     fetchData();
