@@ -2,6 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import { useSearchParams } from "next/navigation"
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import useWebSocket from '@/components/hooks/webSocket';
 
 interface Comment {
   comment: string;
@@ -33,6 +36,7 @@ export default function Page() {
   const [user, setUser] = useState<{ id: number; name: string; email: string } | null>(null);
   const searchParams = useSearchParams()
   const email = searchParams.get("email") || "Guest"
+  const { messages, isConnected, auth } = useWebSocket('ws://localhost:3000');
 
   useEffect(() => {
     fetchData();
@@ -40,15 +44,41 @@ export default function Page() {
     if (userData) {
       const parsedUser = JSON.parse(userData);
       setUser(parsedUser);
+      if (isConnected) {
+        console.log(parsedUser.id)
+        auth(parsedUser.id);
+      }
     } else {
       fetch(`http://localhost:3000/api/user?email=${email}`)
         .then(async (response) => {
           const data = await response.json();
           setUser(data.user);
           localStorage.setItem('user', JSON.stringify(data.user));
+          if (isConnected) {
+            auth(data.user.id);
+          }
         });
     }
-  }, []);
+  }, [isConnected]);
+
+  useEffect(() => {
+    if (messages.length > 0) {
+      const latestMessage = messages[messages.length - 1];
+      const parsedMessage = JSON.parse(latestMessage);
+      if (parsedMessage.type == 'like' || parsedMessage.type == 'comment') {
+        toast(parsedMessage.message, {
+          type: 'info',
+          position: 'top-right',
+          autoClose: 5000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+          progress: undefined,
+        });
+      } 
+    }
+  }, [messages]);
 
   const fetchData = async () => {
     const res = await fetch('http://localhost:3000/api/posts');
@@ -91,6 +121,7 @@ export default function Page() {
 
   return (
     <div className='flex flex-col items-center justify-center min-h-screen py-8 px-4'>
+      <ToastContainer />
       {contentArray.length === 0 ? (
         <div>No content available</div>
       ) : (
